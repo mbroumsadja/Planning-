@@ -10,7 +10,8 @@ import {
   describeCycle,
   generatePlanning,
   MAX_MEMBERS,
-  parseMembers,
+  parseTeams,
+  teamLabel,
   toCSV,
   validateRequest,
 } from "@/lib/scheduler";
@@ -23,6 +24,8 @@ interface Draft {
   hospitalId: string;
   groupName: string;
   membersText: string;
+  /** Taille souhaitée des équipes ; 0 = une seule équipe. */
+  teamSize: number;
   startDate: string;
   endDate: string;
   generated: boolean;
@@ -33,12 +36,19 @@ const EMPTY_DRAFT: Draft = {
   hospitalId: "",
   groupName: "",
   membersText: "",
+  teamSize: 3,
   startDate: "",
   endDate: "",
   generated: false,
 };
 
-const STEPS = ["Hôpital", "Groupe", "Période"] as const;
+const STEPS = ["Hôpital", "Stagiaires", "Période"] as const;
+const TEAM_SIZES: { value: number; label: string }[] = [
+  { value: 2, label: "2" },
+  { value: 3, label: "3" },
+  { value: 4, label: "4" },
+  { value: 0, label: "Tous ensemble" },
+];
 
 /** Au-delà de ce nombre d'hôpitaux, on affiche un champ de recherche. */
 const SEARCH_THRESHOLD = 6;
@@ -50,7 +60,11 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
 
   const hospital = hospitals.find((h) => h.id === draft.hospitalId);
-  const members = useMemo(() => parseMembers(draft.membersText), [draft.membersText]);
+  const { teams, manual } = useMemo(
+    () => parseTeams(draft.membersText, draft.teamSize),
+    [draft.membersText, draft.teamSize],
+  );
+  const total = teams.flat().length;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -62,13 +76,13 @@ export default function HomePage() {
     if (!draft.generated || !hospital) return null;
     const request = {
       groupName: draft.groupName.trim(),
-      members,
+      teams,
       startDate: draft.startDate,
       endDate: draft.endDate,
       hospital,
     };
     return validateRequest(request).length === 0 ? generatePlanning(request) : null;
-  }, [draft.generated, draft.groupName, draft.startDate, draft.endDate, members, hospital]);
+  }, [draft.generated, draft.groupName, draft.startDate, draft.endDate, teams, hospital]);
 
   const update = (patch: Partial<Draft>) => {
     setErrors([]);
@@ -116,8 +130,8 @@ export default function HomePage() {
             <h1 className="mt-2 text-4xl md:text-5xl">{planning.request.groupName}</h1>
             <p className="mt-3 text-ink-soft">
               Du {formatLong(planning.request.startDate)} au {formatLong(planning.request.endDate)} ·{" "}
-              {planning.rows.length} stagiaire{planning.rows.length > 1 ? "s" : ""} ·{" "}
-              {describeCycle(hospital.rotation)}
+              {planning.rows.length} stagiaire{planning.rows.length > 1 ? "s" : ""}
+              {teams.length > 1 ? ` en ${teams.length} équipes` : ""} · {describeCycle(hospital.rotation)}
             </p>
           </div>
           <div className="no-print flex flex-wrap gap-3">
@@ -136,8 +150,9 @@ export default function HomePage() {
         <Legend hours={hospital.rotation.hours} types={legendTypes} />
         <PlanningTable planning={planning} />
         <p className="no-print text-sm text-ink-soft">
-          La dernière ligne indique combien de stagiaires sont de garde chaque jour. Une case orange
-          signale un jour sans garde.
+          Dans une équipe, les stagiaires se relaient : quand l'un est de permanence, un autre est de
+          garde ou se repose. La dernière ligne indique combien de stagiaires sont de garde chaque
+          jour. Une case orange signale un jour sans garde.
         </p>
       </section>
     );
@@ -148,9 +163,16 @@ export default function HomePage() {
     const out: string[] = [];
     if (step === 1 && !hospital) out.push("Choisis l'hôpital où se déroule le stage.");
     if (step === 2) {
-      if (!draft.groupName.trim()) out.push("Indique le nom du groupe, par exemple « Groupe A ».");
-      if (members.length === 0) out.push("Ajoute au moins un stagiaire (un nom par ligne).");
-      if (members.length > MAX_MEMBERS) out.push(`Maximum ${MAX_MEMBERS} stagiaires par planning.`);
+      if (!draft.groupName.trim()) out.push("Indique le nom du groupe de stagiaires.");
+      if (total === 0) out.push("Ajoute au moins un stagiaire (un nom par ligne).");
+      if (total > MAX_MEMBERS) out.push(`Maximum ${MAX_MEMBERS} stagiaires par planning.`);
+      if (total > 1) {
+        teams.forEach((team, i) => {
+          if (team.length < 2) {
+            out.push(`${teamLabel(i)} : ${team[0]} est seul. Ajoute un stagiaire à cette équipe.`);
+          }
+        });
+      }
     }
     if (step === 3) {
       if (!isValidISO(draft.startDate)) out.push("Choisis le premier jour de stage.");
@@ -168,7 +190,7 @@ export default function HomePage() {
     if (draft.step < 3) return update({ step: (draft.step + 1) as 2 | 3 });
     const all = validateRequest({
       groupName: draft.groupName.trim(),
-      members,
+      teams,
       startDate: draft.startDate,
       endDate: draft.endDate,
       hospital,
@@ -265,15 +287,15 @@ export default function HomePage() {
 
         {draft.step === 2 && (
           <div>
-            <h2 className="text-2xl">Qui est dans le groupe ?</h2>
+            <h2 className="text-2xl">Qui sont les stagiaires ?</h2>
             <div className="mt-6">
               <label htmlFor="group" className="label">
-                Nom du groupe
+                Nom du groupe de stagiaires
               </label>
               <input
                 id="group"
                 className="field"
-                placeholder="Groupe A"
+                placeholder="Stagiaires de pédiatrie"
                 value={draft.groupName}
                 onChange={(e) => update({ groupName: e.target.value })}
                 autoComplete="off"
@@ -281,7 +303,7 @@ export default function HomePage() {
             </div>
             <div className="mt-6">
               <label htmlFor="members" className="label">
-                Stagiaires
+                Noms des stagiaires
               </label>
               <textarea
                 id="members"
@@ -290,15 +312,62 @@ export default function HomePage() {
                 value={draft.membersText}
                 onChange={(e) => update({ membersText: e.target.value })}
               />
-              <p className="hint" aria-live="polite">
-                Un nom par ligne.{" "}
-                {members.length > 0 &&
-                  `${members.length} stagiaire${members.length > 1 ? "s" : ""} ajouté${members.length > 1 ? "s" : ""}.`}
+              <p className="hint">
+                Un nom par ligne. Pour former les équipes toi-même, laisse une ligne vide entre deux équipes.
               </p>
-              {hospital && hospital.rotation.staggerDays > 0 && members.length > 1 && (
-                <p className="hint">L'ordre des noms fixe l'ordre de passage en garde.</p>
-              )}
             </div>
+
+            <fieldset className="mt-6" disabled={manual}>
+              <legend className="label">Taille des équipes de relais</legend>
+              <div role="radiogroup" aria-label="Taille des équipes" className="flex flex-wrap gap-2">
+                {TEAM_SIZES.map((s) => {
+                  const selected = draft.teamSize === s.value;
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      disabled={manual}
+                      onClick={() => update({ teamSize: s.value })}
+                      className={`min-h-[44px] rounded-full border px-5 text-base transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        selected && !manual
+                          ? "border-brand bg-brand-soft font-semibold text-brand"
+                          : "border-paper-line bg-paper-card hover:border-brand"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="hint">
+                {manual
+                  ? "Équipes formées à la main. Retire la ligne vide pour revenir au calcul automatique."
+                  : "Dans une équipe, les stagiaires se relaient : quand l'un est de permanence, un autre est de garde ou se repose. Personne n'est seul."}
+              </p>
+            </fieldset>
+
+            {total > 0 && (
+              <div className="mt-6" aria-live="polite">
+                <p className="label">
+                  {total} stagiaire{total > 1 ? "s" : ""}, {teams.length} équipe{teams.length > 1 ? "s" : ""}
+                </p>
+                <ul className="space-y-2">
+                  {teams.map((team, i) => (
+                    <li
+                      key={i}
+                      className={`rounded-2xl p-3 text-sm ${
+                        total > 1 && team.length < 2 ? "bg-warn-bg text-warn" : "bg-paper-tint"
+                      }`}
+                    >
+                      <span className="font-semibold">{teamLabel(i)}</span>
+                      <span className="text-ink-soft"> · {team.join(", ")}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
@@ -358,9 +427,9 @@ export default function HomePage() {
                   <dd className="font-medium">{describeCycle(hospital.rotation)}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-ink-soft">Groupe</dt>
+                  <dt className="text-ink-soft">Stagiaires</dt>
                   <dd className="font-medium">
-                    {draft.groupName.trim()} ({members.length})
+                    {draft.groupName.trim()} ({total}, {teams.length} équipe{teams.length > 1 ? "s" : ""})
                   </dd>
                 </div>
               </dl>

@@ -1,28 +1,34 @@
 # Planning
 
-Application web qui génère des plannings de stage : une ligne par stagiaire, une colonne par jour, avec les gardes, les permanences et les repos selon la rotation de l'hôpital choisi.
+Application web qui génère des plannings de stage : une ligne par stagiaire, une colonne par jour, avec les permanences, les gardes et les repos selon la rotation de l'hôpital choisi.
 
 ## Fonctionnement
 
-1. **Hôpital** : l'utilisateur choisit l'hôpital où se déroule le stage. La rotation propre à cet hôpital s'applique automatiquement.
-2. **Groupe** : nom du groupe et liste des stagiaires (un nom par ligne).
+1. **Hôpital** : l'utilisateur choisit l'hôpital où se déroule le stage. La rotation de cet hôpital s'applique automatiquement.
+2. **Stagiaires** : nom du groupe de stagiaires et liste des noms (un par ligne). Les stagiaires forment des équipes de relais : taille 2, 3 ou 4 choisie en un clic, ou équipes formées à la main avec une ligne vide entre deux équipes.
 3. **Période** : premier et dernier jour de stage.
-4. **Résultat** : tableau avec les noms en lignes et les dates en colonnes (groupées par mois), totaux par stagiaire, ligne de couverture des gardes, impression A4 paysage / PDF et export CSV pour Excel.
+4. **Résultat** : tableau avec les noms en lignes (regroupés par équipe) et les dates en colonnes (groupées par mois), totaux par stagiaire, ligne de couverture des gardes, impression A4 paysage / PDF et export CSV pour Excel.
 
 ## Hôpitaux et rotations
 
-Chaque hôpital a un cycle de blocs qui se répète du premier au dernier jour du stage.
+Chaque hôpital a un cycle de jours qui se répète, dans l'ordre de passage, du premier au dernier jour du stage. Rien ne change d'un cycle à l'autre.
 
 | Hôpital | Cycle |
 |---|---|
-| CMA de Laindé | 1 garde, 1 permanence, 1 repos |
-| Hôpital Régional de Garoua | 1 garde, 2 permanences, 4 repos |
+| CMA de Laindé | 1 permanence, 1 garde, 1 repos |
+| Hôpital Régional de Garoua | 2 permanences, 1 garde, 4 repos |
 
 **Ajouter un hôpital** : ouvrir `lib/hospitals.ts`, copier un bloc de `DEFAULT_HOSPITALS`, changer `id`, `name`, `city` et le `cycle`. L'hôpital apparaît ensuite dans la liste de choix. On peut aussi en ajouter ou en modifier depuis `/admin`.
 
 ## Règle de génération
 
-Le stagiaire n° *i* suit le même cycle que le premier, retardé de `i × décalage` jours. Avant son décalage, il est compté en repos. Avec un décalage de 1 et autant de stagiaires que de jours dans le cycle, il y a exactement une garde par jour. Si les week-ends sont exclus, ils sont grisés et ne consomment pas de jour du cycle.
+Tous les stagiaires suivent le même cycle. Dans une équipe, chacun est décalé pour que l'équipe se relaie : le stagiaire à la position *j* d'une équipe de *n* démarre `⌊j × durée du cycle / n⌋` jours plus tard dans le cycle.
+
+- Équipe de 3 sur le cycle du CMA (3 jours) : chaque jour, un est de permanence, un de garde et un au repos.
+- Équipe de 2 : quand l'un fait la permanence, l'autre est au repos.
+- Équipe de 6 : deux stagiaires par poste chaque jour.
+
+Formation automatique des équipes : personne n'est seul. 7 stagiaires en équipes de 2 donnent 3 + 2 + 2. Si les week-ends sont exclus d'une rotation, ils sont grisés et ne consomment pas de jour du cycle.
 
 ## Lancer le projet
 
@@ -40,7 +46,7 @@ app/page.tsx            assistant en 3 étapes + affichage du planning
 app/admin/page.tsx      gestion des hôpitaux et de leur rotation
 components/             tableau du planning, légende
 lib/hospitals.ts        registre des hôpitaux (à compléter)
-lib/scheduler.ts        moteur de génération, validation, export CSV
+lib/scheduler.ts        équipes, moteur de génération, validation, export CSV
 lib/useHospitals.ts     registre du code + modifications faites dans /admin
 lib/dates.ts            utilitaires de dates (UTC)
 scripts/test-scheduler.ts

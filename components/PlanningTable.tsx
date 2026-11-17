@@ -1,12 +1,14 @@
-import { monthLabel, WEEKDAY_LETTERS } from "@/lib/dates";
+import { Fragment } from "react";
+import { formatLong, monthLabel, WEEKDAY_LETTERS } from "@/lib/dates";
+import { teamLabel } from "@/lib/scheduler";
 import { SHIFT_CODE, SHIFT_LABEL, type Planning } from "@/lib/types";
-import { formatLong } from "@/lib/dates";
 import { CELL_STYLE } from "./Legend";
 
-/** Tableau : un stagiaire par ligne, un jour par colonne, groupé par mois. */
+/** Tableau : un stagiaire par ligne (regroupés par équipe), un jour par colonne, groupé par mois. */
 export function PlanningTable({ planning }: { planning: Planning }) {
   const { days, rows, gardeCoverage, request } = planning;
   const hasGarde = request.hospital.rotation.cycle.some((b) => b.type === "garde");
+  const hasTeams = request.teams.length > 1;
 
   // Regroupe les colonnes par mois pour la première ligne d'en-tête.
   const months: { key: string; label: string; span: number }[] = [];
@@ -70,37 +72,53 @@ export function PlanningTable({ planning }: { planning: Planning }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.name}>
-              <th
-                scope="row"
-                className="sticky left-0 z-10 border-b border-r border-paper-line bg-paper-card px-4 py-2 text-left text-sm font-medium text-ink"
-              >
-                {row.name}
-              </th>
-              {row.cells.map((cell, i) => (
-                <td
-                  key={days[i].iso}
-                  title={`${row.name}, ${formatLong(days[i].iso)} : ${
-                    cell === "off" ? "hors rotation" : SHIFT_LABEL[cell]
-                  }`}
-                  className={`border-b border-paper-line text-center ${CELL_STYLE[cell]}`}
-                  style={{ height: 38 }}
-                >
-                  {SHIFT_CODE[cell]}
-                </td>
-              ))}
-              <td className="border-b border-l border-paper-line bg-paper-tint text-center font-semibold text-garde">
-                {row.stats.garde}
-              </td>
-              <td className="border-b border-l border-paper-line bg-paper-tint text-center font-semibold text-permanence">
-                {row.stats.permanence}
-              </td>
-              <td className="border-b border-l border-paper-line bg-paper-tint text-center font-semibold text-repos">
-                {row.stats.repos}
-              </td>
-            </tr>
-          ))}
+          {rows.map((row, idx) => {
+            const startsTeam = hasTeams && (idx === 0 || rows[idx - 1].team !== row.team);
+            return (
+              <Fragment key={`${row.team}-${row.name}`}>
+                {startsTeam && (
+                  <tr>
+                    <th
+                      scope="rowgroup"
+                      className="sticky left-0 z-10 border-b border-r border-paper-line bg-paper-tint px-4 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-brand"
+                    >
+                      {teamLabel(row.team)}
+                    </th>
+                    <td colSpan={days.length + 3} className="border-b border-paper-line bg-paper-tint" />
+                  </tr>
+                )}
+                <tr>
+                  <th
+                    scope="row"
+                    className="sticky left-0 z-10 border-b border-r border-paper-line bg-paper-card px-4 py-2 text-left text-sm font-medium text-ink"
+                  >
+                    {row.name}
+                  </th>
+                  {row.cells.map((cell, i) => (
+                    <td
+                      key={days[i].iso}
+                      title={`${row.name}, ${formatLong(days[i].iso)} : ${
+                        cell === "off" ? "hors rotation" : SHIFT_LABEL[cell]
+                      }`}
+                      className={`border-b border-paper-line text-center ${CELL_STYLE[cell]}`}
+                      style={{ height: 38 }}
+                    >
+                      {SHIFT_CODE[cell]}
+                    </td>
+                  ))}
+                  <td className="border-b border-l border-paper-line bg-paper-tint text-center font-semibold text-garde">
+                    {row.stats.garde}
+                  </td>
+                  <td className="border-b border-l border-paper-line bg-paper-tint text-center font-semibold text-permanence">
+                    {row.stats.permanence}
+                  </td>
+                  <td className="border-b border-l border-paper-line bg-paper-tint text-center font-semibold text-repos">
+                    {row.stats.repos}
+                  </td>
+                </tr>
+              </Fragment>
+            );
+          })}
         </tbody>
         {hasGarde && (
           <tfoot>

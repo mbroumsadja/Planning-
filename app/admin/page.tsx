@@ -165,7 +165,7 @@ export default function AdminPage() {
             <div>
               <h2 className="text-2xl">Cycle de rotation</h2>
               <p className="hint">
-                Le cycle se répète du premier au dernier jour du stage. Durée totale : {cycleLength(rot) || 0}{" "}
+                Mets les blocs dans l'ordre de passage, par exemple permanence, garde, repos. Le cycle se répète jusqu'au dernier jour du stage. Durée totale : {cycleLength(rot) || 0}{" "}
                 jour{cycleLength(rot) > 1 ? "s" : ""}.
               </p>
               <ol className="mt-5 space-y-3">
@@ -229,24 +229,6 @@ export default function AdminPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <label htmlFor="stagger" className="label">
-                  Décalage entre deux stagiaires (jours)
-                </label>
-                <input
-                  id="stagger"
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  className="field"
-                  value={Number.isFinite(rot.staggerDays) ? rot.staggerDays : ""}
-                  onChange={(e) => patchRotation({ staggerDays: e.target.value === "" ? NaN : Number(e.target.value) })}
-                />
-                <p className="hint">
-                  Avec 1, chaque stagiaire commence sa rotation un jour après le précédent. Avec 0, tous
-                  suivent exactement la même.
-                </p>
-              </div>
-              <div>
                 <span className="label">Week-ends</span>
                 <label className="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border border-paper-line px-4">
                   <input
@@ -287,7 +269,7 @@ export default function AdminPage() {
 
             <div>
               <h2 className="text-2xl">Aperçu</h2>
-              <p className="hint">Deux stagiaires fictifs sur 4 semaines, à partir d'un lundi.</p>
+              <p className="hint">Une équipe de trois stagiaires fictifs sur 4 semaines, à partir d'un lundi : ils se relaient sur le cycle.</p>
               {preview ? (
                 <div className="mt-4 space-y-2 overflow-x-auto">
                   {preview.map((cells, r) => (

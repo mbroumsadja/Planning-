@@ -24,8 +24,6 @@ export interface CycleBlock {
 export interface Rotation {
   /** Suite de blocs qui se répète du premier au dernier jour du stage. */
   cycle: CycleBlock[];
-  /** Décalage, en jours actifs, entre deux stagiaires consécutifs. */
-  staggerDays: number;
   /** Si faux, les samedis et dimanches ne comptent pas dans la rotation. */
   includeWeekends: boolean;
   hours: { garde: string; permanence: string };
@@ -41,8 +39,10 @@ export interface Hospital {
 }
 
 export interface PlanningRequest {
+  /** Nom du groupe de stagiaires (titre du planning). */
   groupName: string;
-  members: string[];
+  /** Équipes de relais : les stagiaires d'une même équipe se répartissent le cycle. */
+  teams: string[][];
   startDate: string; // AAAA-MM-JJ
   endDate: string; // AAAA-MM-JJ
   hospital: Hospital;
@@ -67,6 +67,8 @@ export interface MemberStats {
 
 export interface MemberRow {
   name: string;
+  /** Numéro de l'équipe (à partir de 0). */
+  team: number;
   cells: CellType[];
   stats: MemberStats;
 }
