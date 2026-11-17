@@ -14,17 +14,14 @@ export const SHIFT_CODE: Record<CellType, string> = {
   off: "·",
 };
 
-/** Un bloc de la rotation : par exemple 1 jour de garde. */
+/** Un bloc de la rotation : par exemple 2 jours de permanence. */
 export interface CycleBlock {
   type: ShiftType;
   days: number;
 }
 
-/** Rotation définie par l'administration. */
-export interface RotationProfile {
-  id: string;
-  name: string;
-  description: string;
+/** Règle de rotation propre à un hôpital. */
+export interface Rotation {
   /** Suite de blocs qui se répète du premier au dernier jour du stage. */
   cycle: CycleBlock[];
   /** Décalage, en jours actifs, entre deux stagiaires consécutifs. */
@@ -34,12 +31,21 @@ export interface RotationProfile {
   hours: { garde: string; permanence: string };
 }
 
+export interface Hospital {
+  id: string;
+  name: string;
+  city: string;
+  /** Précision facultative (service, particularité de l'organisation). */
+  description: string;
+  rotation: Rotation;
+}
+
 export interface PlanningRequest {
   groupName: string;
   members: string[];
   startDate: string; // AAAA-MM-JJ
   endDate: string; // AAAA-MM-JJ
-  profile: RotationProfile;
+  hospital: Hospital;
 }
 
 export interface PlanningDay {

@@ -1,11 +1,12 @@
 import { addDays, diffDays, isValidISO, parseISO, toISO } from "./dates";
 import type {
   CellType,
+  Hospital,
   MemberRow,
   Planning,
   PlanningDay,
   PlanningRequest,
-  RotationProfile,
+  Rotation,
 } from "./types";
 
 export const MAX_DAYS = 366;
@@ -19,24 +20,27 @@ export function parseMembers(text: string): string[] {
     .filter(Boolean);
 }
 
-export const cycleLength = (profile: RotationProfile): number =>
-  profile.cycle.reduce((sum, b) => sum + b.days, 0);
+export const cycleLength = (rotation: Rotation): number =>
+  rotation.cycle.reduce((sum, b) => sum + b.days, 0);
 
-/** Résume une rotation en une ligne : « 1 garde · 1 repos · 4 permanence ». */
-export function describeCycle(profile: RotationProfile): string {
-  return profile.cycle.map((b) => `${b.days} ${b.type}`).join(" · ");
+/** Résume une rotation en une ligne : « 1 garde · 2 permanences · 4 repos ». */
+export function describeCycle(rotation: Rotation): string {
+  return rotation.cycle
+    .map((b) => `${b.days} ${b.type}${b.days > 1 && b.type !== "repos" ? "s" : ""}`)
+    .join(" · ");
 }
 
-export function validateProfile(profile: RotationProfile): string[] {
+export function validateHospital(hospital: Hospital): string[] {
   const errors: string[] = [];
-  if (!profile.name.trim()) errors.push("Donne un nom à cette rotation.");
-  if (profile.cycle.length === 0) errors.push("Ajoute au moins un bloc (garde, permanence ou repos).");
-  profile.cycle.forEach((b, i) => {
+  const { rotation } = hospital;
+  if (!hospital.name.trim()) errors.push("Donne un nom à l'hôpital.");
+  if (rotation.cycle.length === 0) errors.push("Ajoute au moins un bloc (garde, permanence ou repos).");
+  rotation.cycle.forEach((b, i) => {
     if (!Number.isInteger(b.days) || b.days < 1) {
       errors.push(`Bloc ${i + 1} : le nombre de jours doit être un entier d'au moins 1.`);
     }
   });
-  if (!Number.isInteger(profile.staggerDays) || profile.staggerDays < 0) {
+  if (!Number.isInteger(rotation.staggerDays) || rotation.staggerDays < 0) {
     errors.push("Le décalage entre stagiaires doit être un entier positif ou nul.");
   }
   return errors;
@@ -54,7 +58,7 @@ export function validateRequest(req: PlanningRequest): string[] {
     if (span < 1) errors.push("Le dernier jour doit venir après le premier jour.");
     if (span > MAX_DAYS) errors.push(`La période est limitée à ${MAX_DAYS} jours.`);
   }
-  errors.push(...validateProfile(req.profile));
+  errors.push(...validateHospital(req.hospital));
   return errors;
 }
 
@@ -80,10 +84,10 @@ export function buildDays(startISO: string, endISO: string, includeWeekends: boo
 }
 
 /** Type de poste pour un jour actif donné, après application du décalage du stagiaire. */
-function shiftAt(profile: RotationProfile, activeIndex: number, offset: number): CellType {
-  const length = cycleLength(profile);
+function shiftAt(rotation: Rotation, activeIndex: number, offset: number): CellType {
+  const length = cycleLength(rotation);
   let pos = (((activeIndex - offset) % length) + length) % length;
-  for (const block of profile.cycle) {
+  for (const block of rotation.cycle) {
     if (pos < block.days) return block.type;
     pos -= block.days;
   }
@@ -91,21 +95,21 @@ function shiftAt(profile: RotationProfile, activeIndex: number, offset: number):
 }
 
 /**
- * Génère le planning.
- * Le stagiaire n° i suit la même rotation que le premier, retardée de i × décalage jours actifs.
+ * Génère le planning avec la rotation de l'hôpital choisi.
+ * Le stagiaire n° i suit le même cycle que le premier, retardé de i × décalage jours actifs.
  * Avant son décalage, un stagiaire est compté en repos.
  */
 export function generatePlanning(req: PlanningRequest): Planning {
-  const { profile } = req;
-  const days = buildDays(req.startDate, req.endDate, profile.includeWeekends);
+  const { rotation } = req.hospital;
+  const days = buildDays(req.startDate, req.endDate, rotation.includeWeekends);
 
   const rows: MemberRow[] = req.members.map((name, i) => {
-    const offset = i * profile.staggerDays;
+    const offset = i * rotation.staggerDays;
     const stats = { garde: 0, permanence: 0, repos: 0 };
     let activeIndex = 0;
     const cells: CellType[] = days.map((day) => {
       if (!day.active) return "off";
-      const cell = activeIndex < offset ? "repos" : shiftAt(profile, activeIndex, offset);
+      const cell = activeIndex < offset ? "repos" : shiftAt(rotation, activeIndex, offset);
       activeIndex++;
       if (cell !== "off") stats[cell]++;
       return cell;
@@ -119,14 +123,14 @@ export function generatePlanning(req: PlanningRequest): Planning {
 }
 
 /** Aperçu court pour l'administration : deux stagiaires fictifs sur n jours. */
-export function previewRows(profile: RotationProfile, count = 28, members = 2): CellType[][] {
+export function previewRows(hospital: Hospital, count = 28, members = 2): CellType[][] {
   const start = "2026-01-05"; // un lundi
   const planning = generatePlanning({
     groupName: "Aperçu",
     members: Array.from({ length: members }, (_, i) => `S${i + 1}`),
     startDate: start,
     endDate: toISO(addDays(parseISO(start), count - 1)),
-    profile,
+    hospital,
   });
   return planning.rows.map((r) => r.cells);
 }

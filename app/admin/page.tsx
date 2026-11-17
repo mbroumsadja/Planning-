@@ -2,32 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { CELL_STYLE, Legend } from "@/components/Legend";
-import { DEFAULT_PROFILES, newProfile, STORAGE_KEYS } from "@/lib/defaults";
-import { cycleLength, describeCycle, previewRows, validateProfile } from "@/lib/scheduler";
-import { SHIFT_CODE, SHIFT_LABEL, type CycleBlock, type RotationProfile, type ShiftType } from "@/lib/types";
-import { useLocalState } from "@/lib/useLocalState";
+import { newHospital } from "@/lib/hospitals";
+import { cycleLength, describeCycle, previewRows, validateHospital } from "@/lib/scheduler";
+import {
+  SHIFT_CODE,
+  SHIFT_LABEL,
+  type CycleBlock,
+  type Hospital,
+  type Rotation,
+  type ShiftType,
+} from "@/lib/types";
+import { useHospitals } from "@/lib/useHospitals";
 
 const TYPES: ShiftType[] = ["garde", "permanence", "repos"];
 
 export default function AdminPage() {
-  const [profiles, setProfiles, ready] = useLocalState<RotationProfile[]>(
-    STORAGE_KEYS.profiles,
-    DEFAULT_PROFILES,
-  );
+  const { hospitals, setHospitals, resetHospitals, ready } = useHospitals();
   const [selectedId, setSelectedId] = useState<string>("");
-  const [draft, setDraft] = useState<RotationProfile | null>(null);
+  const [draft, setDraft] = useState<Hospital | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
 
-  // Sélectionne la première rotation une fois les données chargées.
+  // Sélectionne le premier hôpital une fois les données chargées.
   useEffect(() => {
-    if (ready && !selectedId && profiles.length > 0) setSelectedId(profiles[0].id);
-  }, [ready, selectedId, profiles]);
+    if (ready && !selectedId && hospitals.length > 0) setSelectedId(hospitals[0].id);
+  }, [ready, selectedId, hospitals]);
 
-  // Recharge le formulaire quand on change de rotation.
+  // Recharge le formulaire quand on change d'hôpital.
   useEffect(() => {
-    const p = profiles.find((x) => x.id === selectedId);
-    setDraft(p ? structuredClone(p) : null);
+    const h = hospitals.find((x) => x.id === selectedId);
+    setDraft(h ? structuredClone(h) : null);
     setErrors([]);
     setSaved(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -35,108 +39,123 @@ export default function AdminPage() {
 
   if (!ready) return <p className="text-ink-soft">Chargement…</p>;
 
-  const patch = (p: Partial<RotationProfile>) => {
+  const patch = (p: Partial<Hospital>) => {
     setSaved(false);
     setDraft((d) => (d ? { ...d, ...p } : d));
   };
 
+  const patchRotation = (p: Partial<Rotation>) =>
+    draft && patch({ rotation: { ...draft.rotation, ...p } });
+
   const patchBlock = (i: number, b: Partial<CycleBlock>) =>
-    draft && patch({ cycle: draft.cycle.map((x, j) => (j === i ? { ...x, ...b } : x)) });
+    draft && patchRotation({ cycle: draft.rotation.cycle.map((x, j) => (j === i ? { ...x, ...b } : x)) });
 
   const moveBlock = (i: number, dir: -1 | 1) => {
     if (!draft) return;
     const j = i + dir;
-    if (j < 0 || j >= draft.cycle.length) return;
-    const cycle = [...draft.cycle];
+    if (j < 0 || j >= draft.rotation.cycle.length) return;
+    const cycle = [...draft.rotation.cycle];
     [cycle[i], cycle[j]] = [cycle[j], cycle[i]];
-    patch({ cycle });
+    patchRotation({ cycle });
   };
 
   const save = () => {
     if (!draft) return;
-    const e = validateProfile(draft);
+    const e = validateHospital(draft);
     setErrors(e);
     if (e.length) return;
-    setProfiles((list) => list.map((p) => (p.id === draft.id ? draft : p)));
+    setHospitals((list) => list.map((h) => (h.id === draft.id ? draft : h)));
     setSaved(true);
   };
 
-  const addProfile = () => {
-    const p = newProfile();
-    setProfiles((list) => [...list, p]);
-    setSelectedId(p.id);
+  const addHospital = () => {
+    const h = newHospital();
+    setHospitals((list) => [...list, h]);
+    setSelectedId(h.id);
   };
 
-  const removeProfile = () => {
-    if (!draft || profiles.length <= 1) return;
-    if (!window.confirm(`Supprimer la rotation « ${draft.name} » ?`)) return;
-    const rest = profiles.filter((p) => p.id !== draft.id);
-    setProfiles(rest);
-    setSelectedId(rest[0].id);
+  const removeHospital = () => {
+    if (!draft) return;
+    if (!window.confirm(`Supprimer « ${draft.name} » ?`)) return;
+    const rest = hospitals.filter((h) => h.id !== draft.id);
+    setHospitals(() => rest);
+    setSelectedId(rest[0]?.id ?? "");
   };
 
   const resetAll = () => {
-    if (!window.confirm("Remplacer toutes les rotations par celles d'origine ?")) return;
-    setProfiles(DEFAULT_PROFILES);
-    setSelectedId(DEFAULT_PROFILES[0].id);
+    if (!window.confirm("Annuler toutes les modifications et revenir à la liste d'origine ?")) return;
+    resetHospitals();
+    setSelectedId("");
   };
 
-  const preview = draft && validateProfile(draft).length === 0 ? previewRows(draft) : null;
+  const rot = draft?.rotation;
+  const preview = draft && validateHospital(draft).length === 0 ? previewRows(draft) : null;
 
   return (
     <div>
       <header className="mb-10 max-w-2xl">
         <h1 className="text-4xl md:text-5xl">Administration</h1>
         <p className="mt-3 text-ink-soft">
-          Définis ici les rotations : nombre de jours de garde, de permanence et de repos. Les
-          utilisateurs n'ont plus qu'à saisir leur groupe et les dates.
+          Chaque hôpital a sa rotation de garde, de permanence et de repos. L'utilisateur choisit
+          l'hôpital, la rotation s'applique toute seule.
         </p>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
         <aside>
           <ul className="space-y-2">
-            {profiles.map((p) => (
-              <li key={p.id}>
+            {hospitals.map((h) => (
+              <li key={h.id}>
                 <button
                   type="button"
-                  onClick={() => setSelectedId(p.id)}
-                  aria-current={p.id === selectedId}
+                  onClick={() => setSelectedId(h.id)}
+                  aria-current={h.id === selectedId}
                   className={`w-full rounded-2xl border p-4 text-left transition ${
-                    p.id === selectedId ? "border-brand bg-brand-soft" : "border-paper-line bg-paper-card hover:border-brand"
+                    h.id === selectedId ? "border-brand bg-brand-soft" : "border-paper-line bg-paper-card hover:border-brand"
                   }`}
                 >
-                  <span className="block font-semibold">{p.name}</span>
-                  <span className="mt-1 block text-sm capitalize text-ink-soft">{describeCycle(p)}</span>
+                  <span className="block font-semibold">{h.name}</span>
+                  <span className="mt-1 block text-sm text-ink-soft">{describeCycle(h.rotation)}</span>
                 </button>
               </li>
             ))}
           </ul>
-          <button type="button" className="btn-ghost mt-4 w-full" onClick={addProfile}>
-            Nouvelle rotation
+          {hospitals.length === 0 && (
+            <p className="rounded-2xl bg-paper-tint p-4 text-sm text-ink-soft">
+              Aucun hôpital pour l'instant. Ajoute le premier.
+            </p>
+          )}
+          <button type="button" className="btn-ghost mt-4 w-full" onClick={addHospital}>
+            Ajouter un hôpital
           </button>
           <button type="button" className="mt-4 w-full text-sm text-ink-soft underline" onClick={resetAll}>
-            Revenir aux rotations d'origine
+            Revenir à la liste d'origine
           </button>
         </aside>
 
-        {draft && (
+        {draft && rot && (
           <section className="card space-y-10">
-            <div className="grid gap-6">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <label htmlFor="name" className="label">
-                  Nom de la rotation
+                  Nom de l'hôpital
                 </label>
                 <input id="name" className="field" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />
               </div>
               <div>
+                <label htmlFor="city" className="label">
+                  Ville <span className="font-normal text-ink-soft">(facultatif)</span>
+                </label>
+                <input id="city" className="field" value={draft.city} onChange={(e) => patch({ city: e.target.value })} />
+              </div>
+              <div className="sm:col-span-2">
                 <label htmlFor="desc" className="label">
-                  Description <span className="font-normal text-ink-soft">(facultatif)</span>
+                  Précision <span className="font-normal text-ink-soft">(facultatif)</span>
                 </label>
                 <input
                   id="desc"
                   className="field"
-                  placeholder="Affichée aux utilisateurs pour choisir la bonne rotation"
+                  placeholder="Affichée sous le nom de l'hôpital"
                   value={draft.description}
                   onChange={(e) => patch({ description: e.target.value })}
                 />
@@ -146,11 +165,11 @@ export default function AdminPage() {
             <div>
               <h2 className="text-2xl">Cycle de rotation</h2>
               <p className="hint">
-                Le cycle se répète du premier au dernier jour du stage. Durée totale : {cycleLength(draft) || 0}{" "}
-                jour{cycleLength(draft) > 1 ? "s" : ""}.
+                Le cycle se répète du premier au dernier jour du stage. Durée totale : {cycleLength(rot) || 0}{" "}
+                jour{cycleLength(rot) > 1 ? "s" : ""}.
               </p>
               <ol className="mt-5 space-y-3">
-                {draft.cycle.map((b, i) => (
+                {rot.cycle.map((b, i) => (
                   <li key={i} className="flex flex-wrap items-center gap-3 rounded-2xl border border-paper-line p-3">
                     <span className="w-6 text-center text-sm font-semibold text-ink-faint">{i + 1}</span>
                     <select
@@ -186,7 +205,7 @@ export default function AdminPage() {
                         type="button"
                         className="rounded-full px-3 py-2 text-garde hover:bg-garde-bg"
                         aria-label={`Supprimer le bloc ${i + 1}`}
-                        onClick={() => patch({ cycle: draft.cycle.filter((_, j) => j !== i) })}
+                        onClick={() => patchRotation({ cycle: rot.cycle.filter((_, j) => j !== i) })}
                       >
                         ✕
                       </button>
@@ -194,7 +213,7 @@ export default function AdminPage() {
                   </li>
                 ))}
               </ol>
-              {draft.cycle.length === 0 && (
+              {rot.cycle.length === 0 && (
                 <p className="mt-4 rounded-2xl bg-paper-tint p-4 text-sm text-ink-soft">
                   Aucun bloc pour l'instant. Ajoute par exemple « 1 jour de garde ».
                 </p>
@@ -202,7 +221,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 className="btn-ghost mt-4"
-                onClick={() => patch({ cycle: [...draft.cycle, { type: "permanence", days: 1 }] })}
+                onClick={() => patchRotation({ cycle: [...rot.cycle, { type: "permanence", days: 1 }] })}
               >
                 Ajouter un bloc
               </button>
@@ -219,8 +238,8 @@ export default function AdminPage() {
                   min={0}
                   inputMode="numeric"
                   className="field"
-                  value={Number.isFinite(draft.staggerDays) ? draft.staggerDays : ""}
-                  onChange={(e) => patch({ staggerDays: e.target.value === "" ? NaN : Number(e.target.value) })}
+                  value={Number.isFinite(rot.staggerDays) ? rot.staggerDays : ""}
+                  onChange={(e) => patchRotation({ staggerDays: e.target.value === "" ? NaN : Number(e.target.value) })}
                 />
                 <p className="hint">
                   Avec 1, chaque stagiaire commence sa rotation un jour après le précédent. Avec 0, tous
@@ -233,8 +252,8 @@ export default function AdminPage() {
                   <input
                     type="checkbox"
                     className="h-5 w-5 accent-[#0F766E]"
-                    checked={draft.includeWeekends}
-                    onChange={(e) => patch({ includeWeekends: e.target.checked })}
+                    checked={rot.includeWeekends}
+                    onChange={(e) => patchRotation({ includeWeekends: e.target.checked })}
                   />
                   <span>Inclure samedis et dimanches</span>
                 </label>
@@ -242,26 +261,26 @@ export default function AdminPage() {
               </div>
               <div>
                 <label htmlFor="hg" className="label">
-                  Horaires de garde
+                  Horaires de garde <span className="font-normal text-ink-soft">(facultatif)</span>
                 </label>
                 <input
                   id="hg"
                   className="field"
                   placeholder="16h - 8h"
-                  value={draft.hours.garde}
-                  onChange={(e) => patch({ hours: { ...draft.hours, garde: e.target.value } })}
+                  value={rot.hours.garde}
+                  onChange={(e) => patchRotation({ hours: { ...rot.hours, garde: e.target.value } })}
                 />
               </div>
               <div>
                 <label htmlFor="hp" className="label">
-                  Horaires de permanence
+                  Horaires de permanence <span className="font-normal text-ink-soft">(facultatif)</span>
                 </label>
                 <input
                   id="hp"
                   className="field"
                   placeholder="8h - 16h"
-                  value={draft.hours.permanence}
-                  onChange={(e) => patch({ hours: { ...draft.hours, permanence: e.target.value } })}
+                  value={rot.hours.permanence}
+                  onChange={(e) => patchRotation({ hours: { ...rot.hours, permanence: e.target.value } })}
                 />
               </div>
             </div>
@@ -285,7 +304,7 @@ export default function AdminPage() {
                     </div>
                   ))}
                   <div className="pt-3">
-                    <Legend hours={draft.hours} />
+                    <Legend hours={rot.hours} />
                   </div>
                 </div>
               ) : (
@@ -304,13 +323,8 @@ export default function AdminPage() {
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <button
-                type="button"
-                className="text-sm text-garde underline disabled:cursor-not-allowed disabled:opacity-40"
-                onClick={removeProfile}
-                disabled={profiles.length <= 1}
-              >
-                Supprimer cette rotation
+              <button type="button" className="text-sm text-garde underline" onClick={removeHospital}>
+                Supprimer cet hôpital
               </button>
               <div className="flex items-center gap-4">
                 <span aria-live="polite" className="text-sm text-repos">

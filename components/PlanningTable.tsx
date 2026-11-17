@@ -6,7 +6,7 @@ import { CELL_STYLE } from "./Legend";
 /** Tableau : un stagiaire par ligne, un jour par colonne, groupé par mois. */
 export function PlanningTable({ planning }: { planning: Planning }) {
   const { days, rows, gardeCoverage, request } = planning;
-  const hasGarde = request.profile.cycle.some((b) => b.type === "garde");
+  const hasGarde = request.hospital.rotation.cycle.some((b) => b.type === "garde");
 
   // Regroupe les colonnes par mois pour la première ligne d'en-tête.
   const months: { key: string; label: string; span: number }[] = [];
