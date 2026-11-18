@@ -269,12 +269,12 @@ export default function AdminPage() {
 
             <div>
               <h2 className="text-2xl">Aperçu</h2>
-              <p className="hint">Une équipe de trois stagiaires fictifs sur 4 semaines, à partir d'un lundi : ils se relaient sur le cycle.</p>
+              <p className="hint">Trois équipes fictives sur 4 semaines, à partir d'un lundi : elles se relaient sur le cycle.</p>
               {preview ? (
                 <div className="mt-4 space-y-2 overflow-x-auto">
                   {preview.map((cells, r) => (
                     <div key={r} className="flex items-center gap-1">
-                      <span className="w-8 text-sm text-ink-soft">S{r + 1}</span>
+                      <span className="w-8 text-sm text-ink-soft">É{r + 1}</span>
                       {cells.map((c, i) => (
                         <span
                           key={i}

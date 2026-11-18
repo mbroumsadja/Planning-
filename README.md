@@ -5,7 +5,7 @@ Application web qui génère des plannings de stage : une ligne par stagiaire, u
 ## Fonctionnement
 
 1. **Hôpital** : l'utilisateur choisit l'hôpital où se déroule le stage. La rotation de cet hôpital s'applique automatiquement.
-2. **Stagiaires** : nom du groupe de stagiaires et liste des noms (un par ligne). Les stagiaires forment des équipes de relais : taille 2, 3 ou 4 choisie en un clic, ou équipes formées à la main avec une ligne vide entre deux équipes.
+2. **Stagiaires** : nom du groupe de stagiaires et liste des noms (un par ligne). Les stagiaires forment des équipes qui se relaient : taille 2, 3 ou 4 choisie en un clic, ou équipes formées à la main avec une ligne vide entre deux équipes.
 3. **Période** : premier et dernier jour de stage.
 4. **Résultat** : tableau avec les noms en lignes (regroupés par équipe) et les dates en colonnes (groupées par mois), totaux par stagiaire, ligne de couverture des gardes, impression A4 paysage / PDF et export CSV pour Excel.
 
@@ -22,11 +22,12 @@ Chaque hôpital a un cycle de jours qui se répète, dans l'ordre de passage, du
 
 ## Règle de génération
 
-Tous les stagiaires suivent le même cycle. Dans une équipe, chacun est décalé pour que l'équipe se relaie : le stagiaire à la position *j* d'une équipe de *n* démarre `⌊j × durée du cycle / n⌋` jours plus tard dans le cycle.
+Toutes les équipes suivent le même cycle. Les membres d'une équipe ont le même planning : ils font la garde, la permanence et le repos le même jour. Les équipes se relaient entre elles : l'équipe *t* sur *n* démarre `⌊t × durée du cycle / n⌋` jours plus tard dans le cycle.
 
-- Équipe de 3 sur le cycle du CMA (3 jours) : chaque jour, un est de permanence, un de garde et un au repos.
-- Équipe de 2 : quand l'un fait la permanence, l'autre est au repos.
-- Équipe de 6 : deux stagiaires par poste chaque jour.
+- 3 équipes sur le cycle du CMA (3 jours) : chaque jour, une équipe fait la permanence, une la garde et une se repose.
+- 2 équipes : quand l'une fait la permanence, l'autre est au repos.
+- 6 équipes : deux équipes par poste chaque jour.
+- Pour avoir une équipe de garde tous les jours, il faut au moins autant d'équipes que de jours dans le cycle (7 à l'Hôpital Régional).
 
 Formation automatique des équipes : personne n'est seul. 7 stagiaires en équipes de 2 donnent 3 + 2 + 2. Si les week-ends sont exclus d'une rotation, ils sont grisés et ne consomment pas de jour du cycle.
 

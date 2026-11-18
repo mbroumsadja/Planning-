@@ -70,6 +70,12 @@ h3 {
     background: #fff;
     font-size: 11px;
   }
+  /* La page imprimée prend toute la largeur utile, sans marges ni centrage du site */
+  main {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
   .no-print {
     display: none !important;
   }
@@ -78,12 +84,11 @@ h3 {
     border: none !important;
     padding: 0 !important;
   }
-  .planning-scroll {
-    overflow: visible !important;
-  }
-  .planning-table th,
-  .planning-table td {
-    min-width: 0 !important;
+  /* Un bloc (un mois, ou les totaux) ne se coupe pas entre deux pages */
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 14px;
   }
   * {
     -webkit-print-color-adjust: exact;

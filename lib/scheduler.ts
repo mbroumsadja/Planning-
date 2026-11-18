@@ -154,18 +154,20 @@ function shiftAt(rotation: Rotation, activeIndex: number, offset: number): CellT
 }
 
 /**
- * Décalage d'un stagiaire dans le cycle, selon sa place dans l'équipe.
- * Les stagiaires d'une équipe sont répartis régulièrement sur le cycle, pour qu'ils se relaient :
- * à 3 sur un cycle de 3 jours, un fait la permanence, un la garde et un se repose chaque jour.
- * À 6 sur un cycle de 3 jours, ils sont deux par poste.
+ * Décalage d'une équipe dans le cycle, selon son rang parmi les équipes.
+ * Les équipes sont réparties régulièrement sur le cycle pour se relayer entre elles :
+ * avec 3 équipes sur un cycle de 3 jours, chaque jour une équipe fait la permanence, une la garde
+ * et une se repose. Avec 6 équipes sur ce même cycle, elles sont deux par poste.
  */
-export function teamOffset(position: number, teamSize: number, cycleDays: number): number {
-  return Math.floor((position * cycleDays) / teamSize);
+export function teamOffset(teamIndex: number, teamCount: number, cycleDays: number): number {
+  return Math.floor((teamIndex * cycleDays) / teamCount);
 }
 
 /**
  * Génère le planning avec la rotation de l'hôpital choisi.
- * Tout le monde suit le même cycle du premier au dernier jour du stage, décalé selon la place dans l'équipe.
+ * Toutes les équipes suivent le même cycle du premier au dernier jour du stage, décalé selon leur rang.
+ * Les membres d'une même équipe ont exactement le même planning : ils font la garde, la permanence
+ * et le repos le même jour.
  */
 export function generatePlanning(req: PlanningRequest): Planning {
   const { rotation } = req.hospital;
@@ -174,8 +176,8 @@ export function generatePlanning(req: PlanningRequest): Planning {
 
   const rows: MemberRow[] = [];
   req.teams.forEach((team, t) => {
-    team.forEach((name, position) => {
-      const offset = teamOffset(position, team.length, length);
+    const offset = teamOffset(t, req.teams.length, length);
+    team.forEach((name) => {
       const stats = { garde: 0, permanence: 0, repos: 0 };
       let activeIndex = 0;
       const cells: CellType[] = days.map((day) => {
@@ -194,12 +196,12 @@ export function generatePlanning(req: PlanningRequest): Planning {
   return { request: req, days, rows, gardeCoverage };
 }
 
-/** Aperçu court pour l'administration : une équipe de stagiaires fictifs sur n jours. */
-export function previewRows(hospital: Hospital, count = 28, members = 3): CellType[][] {
+/** Aperçu court pour l'administration : une ligne par équipe fictive, sur n jours. */
+export function previewRows(hospital: Hospital, count = 28, teams = 3): CellType[][] {
   const start = "2026-01-05"; // un lundi
   const planning = generatePlanning({
     groupName: "Aperçu",
-    teams: [Array.from({ length: members }, (_, i) => `S${i + 1}`)],
+    teams: Array.from({ length: teams }, (_, i) => [`E${i + 1}`]),
     startDate: start,
     endDate: toISO(addDays(parseISO(start), count - 1)),
     hospital,

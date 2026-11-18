@@ -150,9 +150,9 @@ export default function HomePage() {
         <Legend hours={hospital.rotation.hours} types={legendTypes} />
         <PlanningTable planning={planning} />
         <p className="no-print text-sm text-ink-soft">
-          Dans une équipe, les stagiaires se relaient : quand l'un est de permanence, un autre est de
-          garde ou se repose. La dernière ligne indique combien de stagiaires sont de garde chaque
-          jour. Une case orange signale un jour sans garde.
+          Une équipe fait la garde, la permanence et le repos le même jour, et les équipes se relaient
+          entre elles. La dernière ligne indique combien de stagiaires sont de garde chaque jour. Une
+          case orange signale un jour sans garde.
         </p>
       </section>
     );
@@ -344,7 +344,7 @@ export default function HomePage() {
               <p className="hint">
                 {manual
                   ? "Équipes formées à la main. Retire la ligne vide pour revenir au calcul automatique."
-                  : "Dans une équipe, les stagiaires se relaient : quand l'un est de permanence, un autre est de garde ou se repose. Personne n'est seul."}
+                  : "Une équipe fait la garde, la permanence et le repos le même jour. Les équipes se relaient entre elles. Personne n'est seul."}
               </p>
             </fieldset>
 
