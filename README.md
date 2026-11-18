@@ -7,7 +7,7 @@ Application web qui génère des plannings de stage : une ligne par stagiaire, u
 1. **Hôpital** : l'utilisateur choisit l'hôpital où se déroule le stage. La rotation de cet hôpital s'applique automatiquement.
 2. **Stagiaires** : nom du groupe de stagiaires et liste des noms (un par ligne). Les stagiaires forment des équipes qui se relaient : taille 2, 3 ou 4 choisie en un clic, ou équipes formées à la main avec une ligne vide entre deux équipes.
 3. **Période** : premier et dernier jour de stage.
-4. **Résultat** : un seul tableau, comme la fiche papier : une ligne par stagiaire, une colonne par poste (permanence, garde, repos) et, dans chaque case, la liste des dates mois par mois, avec une couleur par poste. Il a les noms en lignes (regroupés par équipe) et les dates en colonnes (groupées par mois), totaux par stagiaire, ligne de couverture des gardes, impression A4 paysage / PDF et export CSV pour Excel.
+4. **Résultat** : un seul tableau, comme la fiche papier : une ligne par stagiaire, une colonne par poste (permanence, garde, repos) et, dans chaque case, la liste des dates mois par mois, avec une couleur par poste. Impression A4 paysage / PDF et export CSV pour Excel.
 
 ## Hôpitaux et rotations
 
