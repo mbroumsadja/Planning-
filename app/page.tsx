@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Legend } from "@/components/Legend";
 import { PlanningList } from "@/components/PlanningList";
-import { PlanningTable } from "@/components/PlanningTable";
 import { STORAGE_KEYS } from "@/lib/hospitals";
 import { endOfMonths, formatLong, isValidISO } from "@/lib/dates";
 import {
@@ -30,8 +29,6 @@ interface Draft {
   startDate: string;
   endDate: string;
   generated: boolean;
-  /** Affichage du résultat : tableau calendrier ou liste des dates par poste. */
-  view?: "table" | "list";
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -43,13 +40,7 @@ const EMPTY_DRAFT: Draft = {
   startDate: "",
   endDate: "",
   generated: false,
-  view: "table",
 };
-
-const VIEWS: { value: "table" | "list"; label: string; hint: string }[] = [
-  { value: "table", label: "Tableau", hint: "Un jour par colonne" },
-  { value: "list", label: "Liste par dates", hint: "Permanence, garde, repos" },
-];
 
 const STEPS = ["Hôpital", "Stagiaires", "Période"] as const;
 const TEAM_SIZES: { value: number; label: string }[] = [
@@ -69,7 +60,6 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
 
   const hospital = hospitals.find((h) => h.id === draft.hospitalId);
-  const view = draft.view ?? "table";
   const { teams, manual } = useMemo(
     () => parseTeams(draft.membersText, draft.teamSize),
     [draft.membersText, draft.teamSize],
@@ -157,36 +147,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="no-print flex flex-wrap items-center gap-3">
-          <span className="text-sm font-semibold text-ink">Affichage</span>
-          <div role="radiogroup" aria-label="Affichage du planning" className="inline-flex rounded-full border border-paper-line bg-paper-card p-1">
-            {VIEWS.map((v) => {
-              const selected = view === v.value;
-              return (
-                <button
-                  key={v.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  title={v.hint}
-                  onClick={() => update({ view: v.value })}
-                  className={`min-h-[44px] rounded-full px-5 text-base transition ${
-                    selected ? "bg-brand font-semibold text-white shadow-soft" : "text-ink-soft hover:text-brand"
-                  }`}
-                >
-                  {v.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <Legend hours={hospital.rotation.hours} types={legendTypes} />
-        {view === "list" ? <PlanningList planning={planning} /> : <PlanningTable planning={planning} />}
+        <PlanningList planning={planning} />
         <p className="no-print text-sm text-ink-soft">
-          {view === "list"
-            ? "Chaque fiche regroupe les stagiaires d'une même équipe, qui ont les mêmes jours. Passe la souris sur une date pour voir le jour de la semaine."
-            : "Une équipe fait la garde, la permanence et le repos le même jour, et les équipes se relaient entre elles. La dernière ligne indique combien de stagiaires sont de garde chaque jour. Une case orange signale un jour sans garde."}
+          Chaque ligne est un stagiaire, chaque colonne un poste, et chaque case liste ses dates mois par mois. Les stagiaires d'une même équipe ont les mêmes dates. Passe la souris sur une date pour voir le jour de la semaine.
         </p>
       </section>
     );
