@@ -7,6 +7,7 @@ import type {
   PlanningDay,
   PlanningRequest,
   Rotation,
+  ShiftType,
 } from "./types";
 
 export const MAX_DAYS = 366;
@@ -194,6 +195,28 @@ export function generatePlanning(req: PlanningRequest): Planning {
   const gardeCoverage = days.map((_, d) => rows.filter((r) => r.cells[d] === "garde").length);
 
   return { request: req, days, rows, gardeCoverage };
+}
+
+export interface TeamSummary {
+  team: number;
+  members: string[];
+  /** Pour chaque poste, les positions dans `planning.days` des jours concernés. */
+  shifts: Record<ShiftType, number[]>;
+}
+
+/**
+ * Liste, pour chaque équipe, les jours de permanence, de garde et de repos.
+ * Les membres d'une équipe ont les mêmes jours : une seule liste par équipe suffit.
+ */
+export function summarizeTeams(planning: Planning): TeamSummary[] {
+  return planning.request.teams.map((members, team) => {
+    const row = planning.rows.find((r) => r.team === team);
+    const shifts: Record<ShiftType, number[]> = { garde: [], permanence: [], repos: [] };
+    row?.cells.forEach((cell, i) => {
+      if (cell !== "off") shifts[cell].push(i);
+    });
+    return { team, members, shifts };
+  });
 }
 
 /** Aperçu court pour l'administration : une ligne par équipe fictive, sur n jours. */

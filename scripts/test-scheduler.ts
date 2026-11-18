@@ -6,6 +6,7 @@ import {
   parseMembers,
   parseTeams,
   splitIntoTeams,
+  summarizeTeams,
   toCSV,
   validateRequest,
 } from "../lib/scheduler";
@@ -133,5 +134,21 @@ assert.ok(validateRequest({ ...ok, teams: [["Awa", "Bello"], ["awa", "Chantal"]]
 const csv = toCSV(two);
 assert.ok(csv.startsWith("﻿Stagiaire;Équipe;2026-01-05"));
 assert.equal(csv.split("\r\n").length, 6);
+
+// 16. Liste des dates par poste (affichage de la fiche papier)
+const sum1 = summarizeTeams(solo)[0];
+assert.deepEqual(sum1.members, ["A"]);
+assert.deepEqual(sum1.shifts.permanence, [0, 3, 6, 9, 12]);
+assert.deepEqual(sum1.shifts.garde, [1, 4, 7, 10, 13]);
+assert.deepEqual(sum1.shifts.repos, [2, 5, 8, 11]);
+const sums = summarizeTeams(two);
+assert.equal(sums.length, 2);
+assert.deepEqual(sums[1].members, ["C", "D", "E"]);
+for (const s of sums) {
+  const all = [...s.shifts.permanence, ...s.shifts.garde, ...s.shifts.repos].sort((a, b) => a - b);
+  assert.deepEqual(all, Array.from({ length: two.days.length }, (_, i) => i), "chaque jour est dans une seule liste");
+}
+const nwSum = summarizeTeams(nw)[0]; // week-ends exclus : absents des listes
+assert.deepEqual([...nwSum.shifts.garde, ...nwSum.shifts.permanence, ...nwSum.shifts.repos].sort(), [0, 3]);
 
 console.log("Tous les tests du moteur passent.");

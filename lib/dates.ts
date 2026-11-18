@@ -37,4 +37,20 @@ export const monthLabel = (year: number, month: number): string =>
     new Date(Date.UTC(year, month, 1)),
   );
 
-export const WEEKDAY_LETTERS = ["D", "L", "M", "M", "J", "V", "S"];
+/** « déc. 2026 » */
+export const monthShort = (year: number, month: number): string =>
+  new Intl.DateTimeFormat("fr-FR", { month: "short", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(year, month, 1)),
+  );
+
+/** « mardi 1 décembre 2026 » */
+export const formatFull = (iso: string): string =>
+  new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(parseISO(iso));
+
+export const WEEKDAY_LETTERS =["D", "L", "M", "M", "J", "V", "S"];

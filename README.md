@@ -7,7 +7,7 @@ Application web qui génère des plannings de stage : une ligne par stagiaire, u
 1. **Hôpital** : l'utilisateur choisit l'hôpital où se déroule le stage. La rotation de cet hôpital s'applique automatiquement.
 2. **Stagiaires** : nom du groupe de stagiaires et liste des noms (un par ligne). Les stagiaires forment des équipes qui se relaient : taille 2, 3 ou 4 choisie en un clic, ou équipes formées à la main avec une ligne vide entre deux équipes.
 3. **Période** : premier et dernier jour de stage.
-4. **Résultat** : tableau avec les noms en lignes (regroupés par équipe) et les dates en colonnes (groupées par mois), totaux par stagiaire, ligne de couverture des gardes, impression A4 paysage / PDF et export CSV pour Excel.
+4. **Résultat** : deux affichages au choix (bouton « Tableau / Liste par dates »). La liste reprend la fiche papier : pour chaque équipe, les noms puis les dates de permanence, de garde et de repos, chacune dans sa couleur. Le tableau a les noms en lignes (regroupés par équipe) et les dates en colonnes (groupées par mois), totaux par stagiaire, ligne de couverture des gardes, impression A4 paysage / PDF et export CSV pour Excel.
 
 ## Hôpitaux et rotations
 
@@ -45,7 +45,7 @@ npm run build
 ```
 app/page.tsx            assistant en 3 étapes + affichage du planning
 app/admin/page.tsx      gestion des hôpitaux et de leur rotation
-components/             tableau du planning, légende
+components/             tableau, liste par dates, légende
 lib/hospitals.ts        registre des hôpitaux (à compléter)
 lib/scheduler.ts        équipes, moteur de génération, validation, export CSV
 lib/useHospitals.ts     registre du code + modifications faites dans /admin
