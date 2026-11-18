@@ -102,7 +102,7 @@ export default function AdminPage() {
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
-        <aside>
+        <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
           <ul className="space-y-2">
             {hospitals.map((h) => (
               <li key={h.id}>
@@ -134,7 +134,7 @@ export default function AdminPage() {
         </aside>
 
         {draft && rot && (
-          <section className="card space-y-10">
+          <section className="card min-w-0 space-y-10">
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <label htmlFor="name" className="label">

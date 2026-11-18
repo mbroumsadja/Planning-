@@ -57,8 +57,8 @@ export function PlanningList({ planning }: { planning: Planning }) {
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-paper-line bg-paper-card shadow-soft print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
-      <table className="w-full border-collapse text-left align-top">
-        <thead>
+      <table className="w-full border-collapse text-left align-top max-md:block">
+        <thead className="max-md:hidden">
           <tr>
             <th className="w-[16%] border-b-2 border-paper-line px-3 py-2 text-sm font-semibold text-ink print:px-1.5 print:py-[2px]">
               Stagiaire
@@ -70,26 +70,27 @@ export function PlanningList({ planning }: { planning: Planning }) {
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="max-md:block">
           {summaries.map((s) => (
             <Fragment key={s.team}>
               {several && (
-                <tr className="print-block bg-paper">
+                <tr className="print-block bg-paper max-md:block">
                   <td
                     colSpan={types.length + 1}
-                    className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-brand print:px-1.5 print:py-0 print:text-[8px]"
+                    className="max-md:block px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-brand print:px-1.5 print:py-0 print:text-[8px]"
                   >
                     {teamLabel(s.team)}
                   </td>
                 </tr>
               )}
               {s.members.map((name) => (
-                <tr key={name} className="break-inside-avoid border-t border-paper-line">
-                  <th scope="row" className="px-3 py-2 font-display text-base font-normal leading-tight text-ink print:px-1.5 print:py-[2px] print:text-[10px]">
+                <tr key={name} className="break-inside-avoid border-t border-paper-line max-md:block max-md:px-4 max-md:py-4">
+                  <th scope="row" className="max-md:block max-md:px-0 max-md:pb-2 max-md:pt-0 max-md:text-xl px-3 py-2 font-display text-base font-normal leading-tight text-ink print:px-1.5 print:py-[2px] print:text-[10px]">
                     {name}
                   </th>
                   {types.map((t) => (
-                    <td key={t} className="px-3 py-2 print:px-1.5 print:py-[2px]">
+                    <td key={t} className="max-md:block max-md:px-0 max-md:py-2 px-3 py-2 print:px-1.5 print:py-[2px]">
+                      <span className={`mb-1 hidden text-sm font-semibold max-md:block ${HEAD[t].split(" ")[0]}`}>{SHIFT_LABEL[t]}</span>
                       <Dates planning={planning} type={t} indices={s.shifts[t]} />
                     </td>
                   ))}

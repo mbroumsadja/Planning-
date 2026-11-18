@@ -28,13 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" aria-label="Planning, accueil" className="rounded-lg">
               <Logo size={30} />
             </Link>
-            <nav className="flex items-center gap-2 text-base">
-              <Link href="/" className="rounded-full px-4 py-2 text-ink-soft hover:bg-paper-tint hover:text-ink">
+            <nav className="flex items-center gap-0 text-[15px] sm:gap-2 sm:text-base">
+              <Link href="/" className="rounded-full px-3 py-2 sm:px-4 text-ink-soft hover:bg-paper-tint hover:text-ink">
                 Générer
               </Link>
               <Link
                 href="/admin"
-                className="rounded-full px-4 py-2 text-ink-soft hover:bg-paper-tint hover:text-ink"
+                className="rounded-full px-3 py-2 sm:px-4 text-ink-soft hover:bg-paper-tint hover:text-ink"
               >
                 Administration
               </Link>
