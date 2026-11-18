@@ -24,17 +24,17 @@ function Dates({ planning, type, indices }: { planning: Planning; type: ShiftTyp
     else groups.push({ key, label: monthShort(d.year, d.month), items: [i] });
   }
   return (
-    <ul className="flex flex-wrap items-center gap-1 print:gap-0.5">
+    <ul className="flex flex-wrap items-center gap-0.5">
       {groups.map((g) => (
         <Fragment key={g.key}>
-          <li className="w-full pt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft first:pt-0 print:w-auto print:pt-0 print:pl-1 print:first:pl-0">
+          <li className="pl-1.5 pr-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-soft first:pl-0 print:pl-1 print:text-[8px] print:first:pl-0">
             {g.label}
           </li>
           {g.items.map((i) => (
             <li
               key={i}
               title={formatFull(planning.days[i].iso)}
-              className={`inline-flex h-7 min-w-[1.75rem] items-center justify-center rounded-md px-1 text-sm font-semibold print:h-5 print:min-w-[1.2rem] print:text-[11px] ${CELL_STYLE[type]}`}
+              className={`inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded px-0.5 text-xs font-semibold print:h-[15px] print:min-w-[15px] print:text-[9px] ${CELL_STYLE[type]}`}
             >
               {planning.days[i].day}
             </li>
@@ -60,11 +60,11 @@ export function PlanningList({ planning }: { planning: Planning }) {
       <table className="w-full border-collapse text-left align-top">
         <thead>
           <tr>
-            <th className="w-[18%] border-b-2 border-paper-line px-4 py-3 text-sm font-semibold text-ink print:px-2 print:py-1">
+            <th className="w-[16%] border-b-2 border-paper-line px-3 py-2 text-sm font-semibold text-ink print:px-1.5 print:py-[2px]">
               Stagiaire
             </th>
             {types.map((t) => (
-              <th key={t} className={`border-b-2 px-4 py-3 text-base font-semibold print:px-2 print:py-1 ${HEAD[t]}`}>
+              <th key={t} className={`border-b-2 px-3 py-2 text-base font-semibold print:px-1.5 print:py-[2px] print:text-xs ${HEAD[t]}`}>
                 {SHIFT_LABEL[t]}
               </th>
             ))}
@@ -77,7 +77,7 @@ export function PlanningList({ planning }: { planning: Planning }) {
                 <tr className="print-block bg-paper">
                   <td
                     colSpan={types.length + 1}
-                    className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand print:px-2"
+                    className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-brand print:px-1.5 print:py-0 print:text-[8px]"
                   >
                     {teamLabel(s.team)}
                   </td>
@@ -85,11 +85,11 @@ export function PlanningList({ planning }: { planning: Planning }) {
               )}
               {s.members.map((name) => (
                 <tr key={name} className="break-inside-avoid border-t border-paper-line">
-                  <th scope="row" className="px-4 py-3 font-display text-lg font-normal leading-tight text-ink print:px-2 print:py-1 print:text-sm">
+                  <th scope="row" className="px-3 py-2 font-display text-base font-normal leading-tight text-ink print:px-1.5 print:py-[2px] print:text-[10px]">
                     {name}
                   </th>
                   {types.map((t) => (
-                    <td key={t} className="px-4 py-3 print:px-2 print:py-1">
+                    <td key={t} className="px-3 py-2 print:px-1.5 print:py-[2px]">
                       <Dates planning={planning} type={t} indices={s.shifts[t]} />
                     </td>
                   ))}

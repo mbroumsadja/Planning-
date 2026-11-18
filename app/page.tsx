@@ -123,12 +123,12 @@ export default function HomePage() {
     const legendTypes = (["garde", "permanence", "repos"] as ShiftType[]).filter((t) => used.has(t));
 
     return (
-      <section className="print-area space-y-8">
+      <section className="print-area space-y-6 print:space-y-2">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-brand">{hospital.name}</p>
-            <h1 className="mt-2 text-4xl md:text-5xl">{planning.request.groupName}</h1>
-            <p className="mt-3 text-ink-soft">
+            <h1 className="mt-2 text-4xl md:text-5xl print:mt-0 print:text-2xl">{planning.request.groupName}</h1>
+            <p className="mt-3 text-ink-soft print:mt-1 print:text-xs">
               Du {formatLong(planning.request.startDate)} au {formatLong(planning.request.endDate)} ·{" "}
               {planning.rows.length} stagiaire{planning.rows.length > 1 ? "s" : ""}
               {teams.length > 1 ? ` en ${teams.length} équipes` : ""} · {describeCycle(hospital.rotation)}
