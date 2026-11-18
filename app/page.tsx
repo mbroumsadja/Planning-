@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Logo, LogoMark } from "@/components/Logo";
 import { Legend } from "@/components/Legend";
 import { PlanningList } from "@/components/PlanningList";
 import { STORAGE_KEYS } from "@/lib/hospitals";
@@ -124,6 +125,7 @@ export default function HomePage() {
 
     return (
       <section className="print-area space-y-6 print:space-y-2">
+        <Logo size={18} className="hidden print:inline-flex" />
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-brand">{hospital.name}</p>
@@ -202,7 +204,8 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <header className="mb-10">
-        <h1 className="text-4xl md:text-5xl">Créer un planning de stage</h1>
+        <LogoMark size={56} title="Planning" />
+        <h1 className="mt-6 text-4xl md:text-5xl">Créer un planning de stage</h1>
         <p className="mt-3 text-ink-soft">Trois étapes, moins d'une minute.</p>
       </header>
 
